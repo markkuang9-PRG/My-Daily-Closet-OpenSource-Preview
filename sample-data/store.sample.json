@@ -1,0 +1,51 @@
+{
+  "closetItems": [
+    {
+      "name": "Ivory Shirt",
+      "type": "Shirt",
+      "category": "Top",
+      "colors": [
+        "Ivory"
+      ],
+      "style": "Minimal",
+      "tone": "Ivory",
+      "imageHint": "Shirt",
+      "note": "",
+      "season": "All season",
+      "formality": "Smart casual",
+      "occasions": "Office, Daily",
+      "material": "",
+      "imageUrl": "",
+      "id": "sample-top-1",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "wearCount": 2
+    },
+    {
+      "name": "Black Trousers",
+      "type": "Trousers",
+      "category": "Bottom",
+      "colors": [
+        "Black"
+      ],
+      "style": "Minimal",
+      "tone": "Black",
+      "imageHint": "Trousers",
+      "note": "",
+      "season": "All season",
+      "formality": "Smart casual",
+      "occasions": "Office, Daily",
+      "material": "",
+      "imageUrl": "",
+      "id": "sample-bottom-1",
+      "createdAt": "2026-01-02T00:00:00.000Z",
+      "wearCount": 1
+    }
+  ],
+  "profile": {
+    "gender": "",
+    "occupation": "",
+    "city": "",
+    "preferredStyle": "Minimal",
+    "commonOccasions": "Office, Daily"
+  }
+}

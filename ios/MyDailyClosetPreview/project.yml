@@ -1,0 +1,27 @@
+name: MyDailyClosetPreview
+options:
+  minimumXcodeGenVersion: 2.38.0
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.mark.mydailycloset.preview
+    IPHONEOS_DEPLOYMENT_TARGET: 18.0
+    SWIFT_VERSION: 5.0
+targets:
+  MyDailyClosetPreview:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: App
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: MyDailyCloset
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleDefault
+        INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking: YES
+        INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoadsInWebContent: YES
+    scheme:
+      testTargets: []

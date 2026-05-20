@@ -1,0 +1,10 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserstate
+*.swp
+*.tmp
+.env
+.env.local
+.venv/
+__pycache__/
