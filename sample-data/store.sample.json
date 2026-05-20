@@ -4,9 +4,7 @@
       "name": "Ivory Shirt",
       "type": "Shirt",
       "category": "Top",
-      "colors": [
-        "Ivory"
-      ],
+      "colors": ["Ivory"],
       "style": "Minimal",
       "tone": "Ivory",
       "imageHint": "Shirt",
@@ -24,9 +22,7 @@
       "name": "Black Trousers",
       "type": "Trousers",
       "category": "Bottom",
-      "colors": [
-        "Black"
-      ],
+      "colors": ["Black"],
       "style": "Minimal",
       "tone": "Black",
       "imageHint": "Trousers",
