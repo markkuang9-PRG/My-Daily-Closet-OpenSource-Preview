@@ -19,6 +19,8 @@ private struct Garment: Identifiable, Hashable {
     let wearCount: Int
 }
 
+private let previewRootPath = "/Users/mark/Desktop/PiedraRojaGroup/mydailycloset/Mydailycloset_APP"
+
 private struct SuggestedLook: Identifiable {
     let id: String
     let title: String
@@ -134,6 +136,8 @@ private struct NativeAppView: View {
     @State private var stylistStatusMessage = ""
     @State private var expandedDraftID: String?
     @State private var copiedDraftID: String?
+    @State private var selectedGarment: Garment?
+    @State private var closetStatusMessage = ""
 
     private let filters = ["All", "Top", "Bottom", "Outerwear", "Shoes", "Spring", "Summer", "Autumn"]
     private let horizontalPadding: CGFloat = 20
@@ -281,29 +285,71 @@ private struct NativeAppView: View {
                 } else {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
                         ForEach(filteredGarments) { item in
-                            VStack(alignment: .leading, spacing: 12) {
-                                garmentImage(item)
-                                    .frame(height: 176)
+                            Button {
+                                selectedGarment = item
+                            } label: {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    garmentImage(item)
+                                        .frame(height: 176)
 
-                                Text(item.name)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color(hex: "4B433C"))
-                                    .lineLimit(1)
+                                    Text(item.name)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(Color(hex: "4B433C"))
+                                        .lineLimit(1)
 
-                                Text("\(item.type) · \(item.color)")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(Color(hex: "857A71"))
+                                    HStack(alignment: .center) {
+                                        Text("\(item.type) · \(item.color)")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundStyle(Color(hex: "857A71"))
+                                        Spacer()
+                                        if item.wearCount > 0 {
+                                            Text("\(item.wearCount)x")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(Color(hex: "8A7F74"))
+                                        }
+                                    }
+                                }
+                                .padding(14)
+                                .background(.white.opacity(0.32), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                                        .stroke(Color.white.opacity(0.32), lineWidth: 1)
+                                )
                             }
-                            .padding(14)
-                            .background(.white.opacity(0.32), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                    .stroke(Color.white.opacity(0.32), lineWidth: 1)
-                            )
+                            .buttonStyle(.plain)
                         }
                     }
                 }
+
+                if !closetStatusMessage.isEmpty {
+                    emptyPanel(title: "Closet updated", subtitle: closetStatusMessage)
+                }
             }
+        }
+        .sheet(item: $selectedGarment) { garment in
+            GarmentEditorSheet(
+                garment: garment,
+                onClose: {
+                    selectedGarment = nil
+                },
+                onSave: { name, category, type, color, season in
+                    Task {
+                        await updateGarment(
+                            id: garment.id,
+                            name: name,
+                            category: category,
+                            type: type,
+                            color: color,
+                            season: season
+                        )
+                    }
+                },
+                onDelete: {
+                    Task {
+                        await deleteGarment(id: garment.id)
+                    }
+                }
+            )
         }
     }
 
@@ -821,7 +867,7 @@ private struct NativeAppView: View {
         loadError = false
 
         do {
-            let url = URL(fileURLWithPath: "/Users/mark/Documents/Mydailycloset_APP/.preview-data/store.json")
+            let url = URL(fileURLWithPath: "\(previewRootPath)/.preview-data/store.json")
             let data = try Data(contentsOf: url)
             let decoded = try JSONDecoder().decode(PreviewStoreFile.self, from: data)
             garments = decoded.closetItems.map {
@@ -886,7 +932,7 @@ private struct NativeAppView: View {
         }
 
         do {
-            let root = URL(fileURLWithPath: "/Users/mark/Documents/Mydailycloset_APP")
+            let root = URL(fileURLWithPath: previewRootPath)
             let previewDirectory = root.appendingPathComponent(".preview-data", isDirectory: true)
             let uploadsDirectory = previewDirectory.appendingPathComponent("uploads", isDirectory: true)
             let storeURL = previewDirectory.appendingPathComponent("store.json")
@@ -941,7 +987,7 @@ private struct NativeAppView: View {
     @MainActor
     private func wear(look: SuggestedLook) async {
         do {
-            let storeURL = URL(fileURLWithPath: "/Users/mark/Documents/Mydailycloset_APP/.preview-data/store.json")
+            let storeURL = URL(fileURLWithPath: "\(previewRootPath)/.preview-data/store.json")
             let storedData = try Data(contentsOf: storeURL)
             var store = try JSONDecoder().decode(PreviewStoreWritable.self, from: storedData)
 
@@ -989,6 +1035,63 @@ private struct NativeAppView: View {
         Why sell: Low rotation in wardrobe
         Suggested price: $42
         """
+    }
+
+    @MainActor
+    private func updateGarment(id: String, name: String, category: String, type: String, color: String, season: String) async {
+        do {
+            let storeURL = URL(fileURLWithPath: "\(previewRootPath)/.preview-data/store.json")
+            let storedData = try Data(contentsOf: storeURL)
+            var store = try JSONDecoder().decode(PreviewStoreWritable.self, from: storedData)
+
+            store.closetItems = store.closetItems.map { item in
+                guard item.id == id else { return item }
+                return PreviewStoredItem(
+                    name: name,
+                    type: type,
+                    category: category,
+                    colors: [color],
+                    style: item.style,
+                    tone: color,
+                    imageHint: type,
+                    note: item.note,
+                    season: season,
+                    formality: item.formality,
+                    occasions: item.occasions,
+                    material: item.material,
+                    imageUrl: item.imageUrl,
+                    id: item.id,
+                    createdAt: item.createdAt,
+                    wearCount: item.wearCount
+                )
+            }
+
+            let encoded = try JSONEncoder.prettyPrinted.encode(store)
+            try encoded.write(to: storeURL, options: .atomic)
+            await loadGarments()
+            selectedGarment = garments.first(where: { $0.id == id })
+            closetStatusMessage = "Saved \(name)"
+        } catch {
+            closetStatusMessage = "Could not save changes"
+        }
+    }
+
+    @MainActor
+    private func deleteGarment(id: String) async {
+        do {
+            let storeURL = URL(fileURLWithPath: "\(previewRootPath)/.preview-data/store.json")
+            let storedData = try Data(contentsOf: storeURL)
+            var store = try JSONDecoder().decode(PreviewStoreWritable.self, from: storedData)
+            let deletedName = store.closetItems.first(where: { $0.id == id })?.name ?? "Piece"
+            store.closetItems.removeAll { $0.id == id }
+            let encoded = try JSONEncoder.prettyPrinted.encode(store)
+            try encoded.write(to: storeURL, options: .atomic)
+            selectedGarment = nil
+            await loadGarments()
+            closetStatusMessage = "Deleted \(deletedName)"
+        } catch {
+            closetStatusMessage = "Could not delete piece"
+        }
     }
 }
 
@@ -1049,6 +1152,107 @@ private struct CameraCaptureView: UIViewControllerRepresentable {
                 onCapture(data)
             }
             dismiss()
+        }
+    }
+}
+
+private struct GarmentEditorSheet: View {
+    let garment: Garment
+    let onClose: () -> Void
+    let onSave: (String, String, String, String, String) -> Void
+    let onDelete: () -> Void
+
+    @State private var name: String
+    @State private var category: String
+    @State private var type: String
+    @State private var color: String
+    @State private var season: String
+
+    init(
+        garment: Garment,
+        onClose: @escaping () -> Void,
+        onSave: @escaping (String, String, String, String, String) -> Void,
+        onDelete: @escaping () -> Void
+    ) {
+        self.garment = garment
+        self.onClose = onClose
+        self.onSave = onSave
+        self.onDelete = onDelete
+        _name = State(initialValue: garment.name)
+        _category = State(initialValue: garment.category)
+        _type = State(initialValue: garment.type)
+        _color = State(initialValue: garment.color)
+        _season = State(initialValue: garment.season)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let url = URL(string: garment.imageUrl), garment.imageUrl.hasPrefix("http") {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            RoundedRectangle(cornerRadius: 24).fill(Color.white.opacity(0.5))
+                        }
+                        .frame(height: 220)
+                    } else if garment.imageUrl.hasPrefix("/Users/") {
+                        Image(uiImage: UIImage(contentsOfFile: garment.imageUrl) ?? UIImage())
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 220)
+                    }
+
+                    editorField("Name", text: $name)
+                    editorField("Category", text: $category)
+                    editorField("Type", text: $type)
+                    editorField("Color", text: $color)
+                    editorField("Season", text: $season)
+
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Text("Delete piece")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                    }
+                    .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .padding(20)
+            }
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "EFE8DF"), Color(hex: "E7DED4")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { onClose() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        onSave(name, category, type, color, season)
+                    }
+                }
+            }
+        }
+    }
+
+    private func editorField(_ title: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(2.2)
+                .foregroundStyle(Color(hex: "8A7F74"))
+            TextField(title, text: text)
+                .textInputAutocapitalization(.words)
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .background(.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 }
