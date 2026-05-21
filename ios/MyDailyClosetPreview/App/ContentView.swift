@@ -116,6 +116,18 @@ private enum NativeTab: Hashable {
     case sell
 }
 
+private func localUIImage(for imageUrl: String) -> UIImage? {
+    if imageUrl.hasPrefix("/Users/") {
+        return UIImage(contentsOfFile: imageUrl)
+    }
+
+    if imageUrl.hasPrefix("file://"), let url = URL(string: imageUrl) {
+        return UIImage(contentsOfFile: url.path)
+    }
+
+    return nil
+}
+
 private struct NativeAppView: View {
     @State private var selectedTab: NativeTab = .closet
     @State private var selectedFilter: String = "All"
@@ -775,7 +787,15 @@ private struct NativeAppView: View {
 
     @ViewBuilder
     private func garmentImage(_ item: Garment) -> some View {
-        if let url = absoluteImageUrl(for: item.imageUrl) {
+        if let localImage = localUIImage(for: item.imageUrl) {
+            Image(uiImage: localImage)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(16)
+                .background(Color.white.opacity(0.42))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        } else if let url = absoluteImageUrl(for: item.imageUrl) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
@@ -1196,8 +1216,8 @@ private struct GarmentEditorSheet: View {
                             RoundedRectangle(cornerRadius: 24).fill(Color.white.opacity(0.5))
                         }
                         .frame(height: 220)
-                    } else if garment.imageUrl.hasPrefix("/Users/") {
-                        Image(uiImage: UIImage(contentsOfFile: garment.imageUrl) ?? UIImage())
+                    } else if let localImage = localUIImage(for: garment.imageUrl) {
+                        Image(uiImage: localImage)
                             .resizable()
                             .scaledToFit()
                             .frame(height: 220)
