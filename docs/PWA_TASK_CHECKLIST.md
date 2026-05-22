@@ -23,7 +23,7 @@ Status: in progress.
 - [x] Cache app shell pages for basic offline fallback.
 - [ ] Verify install prompt / Add to Home Screen on Android Chrome.
 - [ ] Verify Add to Home Screen on iPhone Safari.
-- [ ] Replace SVG-only icon with generated PNG icons: 192, 512, apple-touch-icon.
+- [x] Replace SVG-only icon with generated PNG icons: 192, 512, apple-touch-icon.
 - [ ] Add a simple offline fallback screen for failed navigation.
 - [ ] Add PWA install/readiness notes to README.
 
@@ -76,4 +76,3 @@ The immediate product next step is not native iOS polish. It is:
 1. Finish PWA installability verification.
 2. Restore real Supabase.
 3. Test the mobile web upload loop on a real phone.
-
